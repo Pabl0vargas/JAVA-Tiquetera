@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
-@Data // Genera getters, setters, toString, equals, hashCode
+@Data
 @Schema(description = "Representa un recinto o lugar para eventos")
 public class VenueDTO {
 
@@ -13,14 +13,18 @@ public class VenueDTO {
     private Long id;
 
     @NotBlank(message = "El nombre no puede estar vacío")
-    @Schema(description = "Nombre del recinto", example = "Estadio Metropolitano")
+    @Schema(example = "Estadio Metropolitano")
     private String name;
 
     @NotBlank(message = "La dirección no puede estar vacía")
-    @Schema(description = "Dirección del recinto", example = "Calle 123, Ciudad")
+    @Schema(example = "Calle 123, Ciudad")
     private String address;
 
+    @NotBlank(message = "La ciudad es obligatoria")
+    @Schema(description = "Ciudad donde se ubica", example = "Medellin")
+    private String city;
+
     @Min(value = 1, message = "La capacidad debe ser al menos 1")
-    @Schema(description = "Capacidad máxima de asistentes", example = "45000")
+    @Schema(example = "45000")
     private int capacity;
 }

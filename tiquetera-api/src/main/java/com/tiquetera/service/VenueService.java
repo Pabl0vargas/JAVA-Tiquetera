@@ -1,12 +1,14 @@
 package com.tiquetera.service;
 
 import com.tiquetera.dto.VenueDTO;
+import com.tiquetera.entity.VenueEntity;
 import com.tiquetera.exception.ResourceNotFoundException;
 import com.tiquetera.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class VenueService {
@@ -15,34 +17,60 @@ public class VenueService {
     private VenueRepository venueRepository;
 
     public List<VenueDTO> getAllVenues() {
-        return venueRepository.findAll();
+        return venueRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     public VenueDTO getVenueById(Long id) {
-        return venueRepository.findById(id)
+        VenueEntity entity = venueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con id: " + id));
+        return convertToDTO(entity);
     }
 
-    public VenueDTO createVenue(VenueDTO venue) {
-        // Aquí iría lógica de negocio, ej. validar si ya existe
-        return venueRepository.save(venue);
+    public VenueDTO createVenue(VenueDTO venueDTO) {
+        VenueEntity entity = convertToEntity(venueDTO);
+        VenueEntity savedEntity = venueRepository.save(entity);
+        return convertToDTO(savedEntity);
     }
 
     public VenueDTO updateVenue(Long id, VenueDTO venueDetails) {
-        VenueDTO venue = venueRepository.findById(id)
+        VenueEntity entity = venueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con id: " + id));
 
-        // Actualizamos los campos
-        venue.setName(venueDetails.getName());
-        venue.setAddress(venueDetails.getAddress());
-        venue.setCapacity(venueDetails.getCapacity());
+        entity.setName(venueDetails.getName());
+        entity.setAddress(venueDetails.getAddress());
+        entity.setCity(venueDetails.getCity());
+        entity.setCapacity(venueDetails.getCapacity());
 
-        return venueRepository.save(venue);
+        return convertToDTO(venueRepository.save(entity));
     }
 
     public void deleteVenue(Long id) {
-        VenueDTO venue = venueRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con id: " + id));
-        venueRepository.deleteById(venue.getId());
+        if (!venueRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Venue no encontrado con id: " + id);
+        }
+        venueRepository.deleteById(id);
+    }
+
+    // Mappers manuales
+    private VenueDTO convertToDTO(VenueEntity entity) {
+        VenueDTO dto = new VenueDTO();
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setAddress(entity.getAddress());
+        dto.setCity(entity.getCity());
+        dto.setCapacity(entity.getCapacity());
+        return dto;
+    }
+
+    private VenueEntity convertToEntity(VenueDTO dto) {
+        VenueEntity entity = new VenueEntity();
+        // El ID no se setea al crear, lo genera la DB
+        entity.setName(dto.getName());
+        entity.setAddress(dto.getAddress());
+        entity.setCity(dto.getCity());
+        entity.setCapacity(dto.getCapacity());
+        return entity;
     }
 }

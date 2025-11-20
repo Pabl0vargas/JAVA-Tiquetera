@@ -63,4 +63,6 @@ logs/
 .DS_Store
 Thumbs.db
 
+### Spring Boot ###
+src/main/resources/application.properties
 

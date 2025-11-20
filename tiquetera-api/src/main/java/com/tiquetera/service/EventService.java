@@ -1,13 +1,18 @@
 package com.tiquetera.service;
 
 import com.tiquetera.dto.EventDTO;
+import com.tiquetera.entity.EventEntity;
+import com.tiquetera.entity.VenueEntity;
+import com.tiquetera.exception.DuplicateResourceException;
 import com.tiquetera.exception.ResourceNotFoundException;
 import com.tiquetera.repository.EventRepository;
-
+import com.tiquetera.repository.VenueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 public class EventService {
@@ -15,48 +20,74 @@ public class EventService {
     @Autowired
     private EventRepository eventRepository;
 
-    // Opcional: Descomenta para validar que el Venue existe al crear/actualizar
-    // @Autowired
-    // private VenueRepository venueRepository;
+    @Autowired
+    private VenueRepository venueRepository;
 
-    public List<EventDTO> getAllEvents() {
-        return eventRepository.findAll();
+    // 1. Paginación y Filtros
+    public Page<EventDTO> getAllEvents(String city, String category, LocalDateTime startDate, Pageable pageable) {
+        Page<EventEntity> eventPage = eventRepository.findByFilters(city, category, startDate, pageable);
+        return eventPage.map(this::convertToDTO);
     }
 
     public EventDTO getEventById(Long id) {
-        return eventRepository.findById(id)
+        EventEntity entity = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con id: " + id));
+        return convertToDTO(entity);
     }
 
-    public EventDTO createEvent(EventDTO event) {
+    public EventDTO createEvent(EventDTO dto) {
+        // Validar nombre duplicado
+        if (eventRepository.existsByName(dto.getName())) {
+            throw new DuplicateResourceException("Ya existe un evento con el nombre: " + dto.getName());
+        }
 
-        // Long venueId = event.getVenueId();
-        // venueRepository.findById(venueId)
-        //         .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con id: " + venueId));
+        // Validar existencia del Venue
+        VenueEntity venue = venueRepository.findById(dto.getVenueId())
+                .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con id: " + dto.getVenueId()));
 
-        return eventRepository.save(event);
+        EventEntity entity = new EventEntity();
+        entity.setName(dto.getName());
+        entity.setEventDate(dto.getEventDate());
+        entity.setCategory(dto.getCategory());
+        entity.setVenue(venue);
+
+        return convertToDTO(eventRepository.save(entity));
     }
 
-    public EventDTO updateEvent(Long id, EventDTO eventDetails) {
-        EventDTO event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con id: " + id));
+    public EventDTO updateEvent(Long id, EventDTO dto) {
+        EventEntity entity = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado"));
 
-        // Validación opcional del Venue
-        // Long venueId = eventDetails.getVenueId();
-        // venueRepository.findById(venueId)
-        //         .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con id: " + venueId));
+        // Validar duplicado solo si el nombre cambia
+        if (!entity.getName().equals(dto.getName()) && eventRepository.existsByName(dto.getName())) {
+            throw new DuplicateResourceException("El nombre ya está en uso por otro evento");
+        }
 
-        // Actualizamos los campos
-        event.setName(eventDetails.getName());
-        event.setEventDate(eventDetails.getEventDate());
-        event.setVenueId(eventDetails.getVenueId());
+        VenueEntity venue = venueRepository.findById(dto.getVenueId())
+                .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado"));
 
-        return eventRepository.save(event);
+        entity.setName(dto.getName());
+        entity.setEventDate(dto.getEventDate());
+        entity.setCategory(dto.getCategory());
+        entity.setVenue(venue);
+
+        return convertToDTO(eventRepository.save(entity));
     }
 
     public void deleteEvent(Long id) {
-        EventDTO event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con id: " + id));
-        eventRepository.deleteById(event.getId());
+        if (!eventRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Evento no encontrado");
+        }
+        eventRepository.deleteById(id);
+    }
+
+    private EventDTO convertToDTO(EventEntity entity) {
+        EventDTO dto = new EventDTO();
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setEventDate(entity.getEventDate());
+        dto.setCategory(entity.getCategory());
+        dto.setVenueId(entity.getVenue().getId());
+        return dto;
     }
 }

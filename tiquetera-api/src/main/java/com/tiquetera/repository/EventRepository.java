@@ -1,38 +1,30 @@
 package com.tiquetera.repository;
 
-import com.tiquetera.dto.EventDTO;
+import com.tiquetera.entity.EventEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.time.LocalDateTime;
 
 @Repository
-public class EventRepository {
+public interface EventRepository extends JpaRepository<EventEntity, Long> {
 
-    private final Map<Long, EventDTO> eventStore = new ConcurrentHashMap<>();
-    private final AtomicLong idCounter = new AtomicLong();
+    // Para validar nombres duplicados rápidamente
+    boolean existsByName(String name);
 
-    public List<EventDTO> findAll() {
-        return new ArrayList<>(eventStore.values());
-    }
-
-    public Optional<EventDTO> findById(Long id) {
-        return Optional.ofNullable(eventStore.get(id));
-    }
-
-    public EventDTO save(EventDTO event) {
-        if (event.getId() == null) {
-            event.setId(idCounter.incrementAndGet());
-        }
-        eventStore.put(event.getId(), event);
-        return event;
-    }
-
-    public void deleteById(Long id) {
-        eventStore.remove(id);
-    }
+    // Query personalizada para filtros dinámicos y paginación
+    @Query("SELECT e FROM EventEntity e WHERE " +
+            "(:city IS NULL OR e.venue.city = :city) AND " +
+            "(:category IS NULL OR e.category = :category) AND " +
+            "(:startDate IS NULL OR e.eventDate >= :startDate)")
+    Page<EventEntity> findByFilters(
+            @Param("city") String city,
+            @Param("category") String category,
+            @Param("startDate") LocalDateTime startDate,
+            Pageable pageable
+    );
 }
