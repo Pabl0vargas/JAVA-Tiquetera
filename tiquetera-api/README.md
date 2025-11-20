@@ -194,9 +194,9 @@ tiquetera-api/
 │   │   │
 │   │   └── resources/
 │   │       ├── application.properties        // Configuración H2 y JPA
-│   │       └── application-test.properties   // (Opcional, si lo creaste antes)
+│   │       └── application-test.properties  
 │   │
-│   └── test/                                 // Pruebas automáticas (por ahora vacío/default)
+│   └── test/                                 
 │
 ├── .gitignore                  // Archivo para ignorar binarios
 ├── mvnw                        // Ejecutable Maven Wrapper
