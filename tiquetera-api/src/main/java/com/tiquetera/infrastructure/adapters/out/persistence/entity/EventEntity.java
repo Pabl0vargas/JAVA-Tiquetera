@@ -2,6 +2,8 @@ package com.tiquetera.infrastructure.adapters.out.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -20,7 +22,9 @@ public class EventEntity {
 
     private String category;
 
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id", nullable = false)
+    @ToString.Exclude
     private VenueEntity venue;
 }

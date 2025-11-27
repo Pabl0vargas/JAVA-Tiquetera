@@ -2,11 +2,14 @@ package com.tiquetera.infrastructure.adapters.out.persistence;
 
 import com.tiquetera.domain.model.Event;
 import com.tiquetera.domain.ports.out.EventRepositoryPort;
+import com.tiquetera.infrastructure.adapters.out.persistence.entity.EventEntity;
 import com.tiquetera.infrastructure.adapters.out.persistence.mapper.EventPersistenceMapper;
 import com.tiquetera.infrastructure.adapters.out.persistence.repository.EventRepository;
+import com.tiquetera.infrastructure.adapters.out.persistence.repository.EventSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -31,7 +34,11 @@ public class EventPersistenceAdapter implements EventRepositoryPort {
 
     @Override
     public Page<Event> findByFilters(String city, String category, LocalDateTime startDate, Pageable pageable) {
-        return eventRepository.findByFilters(city, category, startDate, pageable)
+        // 1. Crear Specification con los filtros
+        Specification<EventEntity> spec = EventSpecification.withDynamicFilters(city, category, startDate);
+
+        // 2. Ejecutar consulta optimizada (con EntityGraph implícito en el repo)
+        return eventRepository.findAll(spec, pageable)
                 .map(eventMapper::toDomain);
     }
 

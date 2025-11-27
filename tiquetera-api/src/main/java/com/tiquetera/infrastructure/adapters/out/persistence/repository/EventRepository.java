@@ -3,24 +3,20 @@ package com.tiquetera.infrastructure.adapters.out.persistence.repository;
 import com.tiquetera.infrastructure.adapters.out.persistence.entity.EventEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.lang.NonNull;
 
-import java.time.LocalDateTime;
-
-public interface EventRepository extends JpaRepository<EventEntity, Long> {
+// JpaSpecificationExecutor habilita el uso de Specifications dinámicas
+public interface EventRepository extends JpaRepository<EventEntity, Long>, JpaSpecificationExecutor<EventEntity> {
 
     boolean existsByName(String name);
 
-    @Query("SELECT e FROM EventEntity e WHERE " +
-            "(:city IS NULL OR e.venue.city = :city) AND " +
-            "(:category IS NULL OR e.category = :category) AND " +
-            "(:startDate IS NULL OR e.eventDate >= :startDate)")
-    Page<EventEntity> findByFilters(
-            @Param("city") String city,
-            @Param("category") String category,
-            @Param("startDate") LocalDateTime startDate,
-            Pageable pageable
-    );
+
+    @Override
+    @NonNull
+    @EntityGraph(attributePaths = {"venue"})
+    Page<EventEntity> findAll(Specification<EventEntity> spec, @NonNull Pageable pageable);
 }

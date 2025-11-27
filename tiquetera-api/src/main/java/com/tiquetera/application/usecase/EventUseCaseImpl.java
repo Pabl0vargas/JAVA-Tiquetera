@@ -9,6 +9,7 @@ import com.tiquetera.exception.DuplicateResourceException;
 import com.tiquetera.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional; // Importación correcta
 
 import java.time.LocalDateTime;
 
@@ -23,44 +24,42 @@ public class EventUseCaseImpl implements ManageEventUseCase {
     }
 
     @Override
+    @Transactional // Si algo falla, hace rollback automático
     public Event createEvent(Event event) {
-        // Validacion de negocio: Nombre unico
         if (eventRepositoryPort.existsByName(event.getName())) {
             throw new DuplicateResourceException("Ya existe un evento con el nombre: " + event.getName());
         }
 
-        // Validacion de negocio: Venue debe existir
-        // Asumimos que el objeto event viene con un objeto Venue adentro que solo trae el ID
-        Long venueId = event.getVenue().getId();
-        Venue venue = venueRepositoryPort.findById(venueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con ID: " + venueId));
+        Venue venue = venueRepositoryPort.findById(event.getVenue().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado con ID: " + event.getVenue().getId()));
 
         event.setVenue(venue);
         return eventRepositoryPort.save(event);
     }
 
     @Override
+    @Transactional(readOnly = true) // Optimización de lectura
     public Event getEventById(Long id) {
         return eventRepositoryPort.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con id: " + id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Event> getEvents(String city, String category, LocalDateTime startDate, Pageable pageable) {
         return eventRepositoryPort.findByFilters(city, category, startDate, pageable);
     }
 
     @Override
+    @Transactional
     public Event updateEvent(Long id, Event event) {
         Event existingEvent = getEventById(id);
 
-        // Si cambia el nombre, validamos que no exista ya
         if (!existingEvent.getName().equals(event.getName()) && eventRepositoryPort.existsByName(event.getName())) {
             throw new DuplicateResourceException("El nombre ya está en uso");
         }
 
-        Long venueId = event.getVenue().getId();
-        Venue venue = venueRepositoryPort.findById(venueId)
+        Venue venue = venueRepositoryPort.findById(event.getVenue().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Venue no encontrado"));
 
         event.setId(id);
@@ -69,6 +68,7 @@ public class EventUseCaseImpl implements ManageEventUseCase {
     }
 
     @Override
+    @Transactional
     public void deleteEvent(Long id) {
         if (!eventRepositoryPort.existsById(id)) {
             throw new ResourceNotFoundException("Evento no encontrado");

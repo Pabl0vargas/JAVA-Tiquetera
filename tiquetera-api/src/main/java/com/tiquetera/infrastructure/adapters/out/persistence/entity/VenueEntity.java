@@ -2,6 +2,10 @@ package com.tiquetera.infrastructure.adapters.out.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -22,4 +26,9 @@ public class VenueEntity {
 
     @Column(nullable = false)
     private int capacity;
+
+
+    @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<EventEntity> events = new ArrayList<>();
 }
