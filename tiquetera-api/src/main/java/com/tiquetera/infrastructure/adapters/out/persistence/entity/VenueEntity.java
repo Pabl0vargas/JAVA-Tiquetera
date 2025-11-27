@@ -1,4 +1,4 @@
-package com.tiquetera.entity;
+package com.tiquetera.infrastructure.adapters.out.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -7,7 +7,6 @@ import lombok.Data;
 @Entity
 @Table(name = "venues")
 public class VenueEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
