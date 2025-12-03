@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize; // IMPORTANTE
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class VenueController {
     private final ManageVenueUseCase manageVenueUseCase;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')") // Solo ADMIN puede crear
     public ResponseEntity<VenueDTO> createVenue(@Valid @RequestBody VenueDTO dto) {
         Venue venue = mapToDomain(dto);
         Venue created = manageVenueUseCase.createVenue(venue);
@@ -30,6 +32,7 @@ public class VenueController {
 
     @GetMapping
     public ResponseEntity<List<VenueDTO>> getAllVenues() {
+        // Endpoint público para usuarios autenticados
         List<VenueDTO> list = manageVenueUseCase.getAllVenues().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -42,21 +45,23 @@ public class VenueController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')") // Solo ADMIN puede editar
     public ResponseEntity<VenueDTO> updateVenue(@PathVariable Long id, @Valid @RequestBody VenueDTO dto) {
         Venue updated = manageVenueUseCase.updateVenue(id, mapToDomain(dto));
         return ResponseEntity.ok(mapToDto(updated));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')") // Solo ADMIN puede borrar
     public ResponseEntity<Void> deleteVenue(@PathVariable Long id) {
         manageVenueUseCase.deleteVenue(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Mappers Manuales simples para la capa Web
+    // --- Mappers ---
     private Venue mapToDomain(VenueDTO dto) {
         Venue venue = new Venue();
-        venue.setId(dto.getId()); // Opcional en create
+        venue.setId(dto.getId());
         venue.setName(dto.getName());
         venue.setAddress(dto.getAddress());
         venue.setCity(dto.getCity());
