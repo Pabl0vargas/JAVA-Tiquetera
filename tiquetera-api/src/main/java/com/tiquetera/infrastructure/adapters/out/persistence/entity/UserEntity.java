@@ -19,5 +19,6 @@ public class UserEntity {
     private String password;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(50)")
     private Role role;
 }

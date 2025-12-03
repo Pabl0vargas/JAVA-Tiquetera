@@ -2,14 +2,14 @@ package com.tiquetera.infrastructure.adapters.in.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tiquetera.infrastructure.adapters.in.web.dto.EventDTO;
-import org.junit.jupiter.api.Disabled; // Importante
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithMockUser; // De la HU-5
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MySQLContainer;
@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("test")
-@Disabled("Prueba de integración deshabilitada debido a restricciones de entorno local con Docker en Windows. El código es funcional en entornos CI/CD.")
+@Disabled("Test de integración deshabilitado en entorno local Windows por compatibilidad de Docker. Funcional en CI/CD Linux.")
 class EventControllerIntegrationTest {
 
     @Container
@@ -41,10 +41,10 @@ class EventControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "admin", roles = {"ADMIN"}) // Seguridad (HU-5)
     void shouldCreateEvent_WhenValidRequest() throws Exception {
         EventDTO dto = new EventDTO();
-        dto.setName("Integration Fest Windows");
+        dto.setName("Integration Fest Mergeado");
         dto.setEventDate(LocalDateTime.now().plusDays(10));
         dto.setCategory("Music");
         dto.setVenueId(1L);
@@ -53,6 +53,6 @@ class EventControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Integration Fest Windows"));
+                .andExpect(jsonPath("$.name").value("Integration Fest Mergeado"));
     }
 }
