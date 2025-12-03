@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: tiquetera-mysql
+    restart: always  # <--- CRÍTICO: Mantiene la BD viva
+    environment:
+      MYSQL_DATABASE: tiqueteradb
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: sa
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306" # Puerto 3307 para evitar choques con tu MySQL local
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tiquetera-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+
+  eureka-server:
+    image: steeltoeoss/eureka-server # Imagen compatible con Docker nuevo
+    container_name: eureka-server
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+      - tiquetera-net
+
+  tiquetera-api:
+    build: .
+    container_name: tiquetera-api
+    restart: always # <--- CRÍTICO: Si falla al inicio, reintenta hasta conectar
+    ports:
+      - "8082:8082"
+    environment:
+      # Variables para conectar con los otros contenedores
+      DB_URL: jdbc:mysql://mysql-db:3306/tiqueteradb?allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: sa
+      DB_PASSWORD: password
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      EUREKA_URI: http://eureka-server:8761/eureka
+      REGISTER_EUREKA: true
+      # Clave JWT para que arranque la seguridad
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - tiquetera-net
+
+networks:
+  tiquetera-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
