@@ -79,7 +79,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- OBSERVABILIDAD (Actuator & Prometheus) -->
+        <!-- OBSERVABILIDAD -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -90,7 +90,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- MICROSERVICIOS (Eureka Client) -->
+        <!-- MICROSERVICIOS -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
@@ -113,7 +113,7 @@
             <version>2.3.0</version>
         </dependency>
 
-        <!-- TESTING (JUnit, Mockito, Testcontainers) -->
+        <!-- TESTING -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -155,6 +155,7 @@
 
     <build>
         <plugins>
+            <!-- COMPILADOR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -182,7 +183,7 @@
                 </configuration>
             </plugin>
 
-            <!-- PLUGIN DE COBERTURA (Task 1: Validación 70%) -->
+            <!-- COBERTURA JACOCO -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -201,6 +202,20 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- IMPORTANTE: PLUGIN DE SPRING BOOT (Faltaba este) -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

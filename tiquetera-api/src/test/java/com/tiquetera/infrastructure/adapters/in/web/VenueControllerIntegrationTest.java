@@ -1,8 +1,8 @@
 package com.tiquetera.infrastructure.adapters.in.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tiquetera.infrastructure.adapters.in.web.dto.EventDTO;
-import org.junit.jupiter.api.Disabled; // Importante
+import com.tiquetera.infrastructure.adapters.in.web.dto.VenueDTO;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,8 +17,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.time.LocalDateTime;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,8 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("test")
-@Disabled("Prueba de integración deshabilitada debido a restricciones de entorno local con Docker en Windows. El código es funcional en entornos CI/CD.")
-class EventControllerIntegrationTest {
+@Disabled("Deshabilitado temporalmente por restricciones de entorno local")
+class VenueControllerIntegrationTest {
 
     @Container
     @ServiceConnection
@@ -42,17 +40,17 @@ class EventControllerIntegrationTest {
 
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
-    void shouldCreateEvent_WhenValidRequest() throws Exception {
-        EventDTO dto = new EventDTO();
-        dto.setName("Integration Fest Windows");
-        dto.setEventDate(LocalDateTime.now().plusDays(10));
-        dto.setCategory("Music");
-        dto.setVenueId(1L);
+    void createVenue_ShouldSucceed_WhenAdmin() throws Exception {
+        VenueDTO dto = new VenueDTO();
+        dto.setName("Estadio Integration");
+        dto.setAddress("Calle 100");
+        dto.setCity("Bogota");
+        dto.setCapacity(50000);
 
-        mockMvc.perform(post("/events")
+        mockMvc.perform(post("/venues")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Integration Fest Windows"));
+                .andExpect(jsonPath("$.name").value("Estadio Integration"));
     }
 }

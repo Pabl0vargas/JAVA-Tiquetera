@@ -1,23 +1,20 @@
 package com.tiquetera.infrastructure.adapters.in.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tiquetera.infrastructure.adapters.in.web.dto.EventDTO;
-import org.junit.jupiter.api.Disabled; // Importante
+import com.tiquetera.infrastructure.adapters.in.web.dto.AuthRequest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
-import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -27,8 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("test")
-@Disabled("Prueba de integración deshabilitada debido a restricciones de entorno local con Docker en Windows. El código es funcional en entornos CI/CD.")
-class EventControllerIntegrationTest {
+@Disabled("Deshabilitado temporalmente por restricciones de entorno local")
+class AuthControllerTest {
 
     @Container
     @ServiceConnection
@@ -41,18 +38,15 @@ class EventControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
-    void shouldCreateEvent_WhenValidRequest() throws Exception {
-        EventDTO dto = new EventDTO();
-        dto.setName("Integration Fest Windows");
-        dto.setEventDate(LocalDateTime.now().plusDays(10));
-        dto.setCategory("Music");
-        dto.setVenueId(1L);
+    void register_ShouldReturnToken() throws Exception {
+        AuthRequest request = new AuthRequest();
+        request.setUsername("newuser_test");
+        request.setPassword("pass123");
 
-        mockMvc.perform(post("/events")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Integration Fest Windows"));
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").exists());
     }
 }
