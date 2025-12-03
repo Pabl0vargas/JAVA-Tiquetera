@@ -12,7 +12,7 @@
     <artifactId>tiquetera-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>tiquetera-api</name>
-    <description>Arquitectura Hexagonal - HU6 (DevOps Testing)</description>
+    <description>Arquitectura Hexagonal Completa (HU-6)</description>
 
     <properties>
         <java.version>17</java.version>
@@ -56,7 +56,7 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
 
-        <!-- SEGURIDAD -->
+        <!-- SEGURIDAD (HU-5) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -79,7 +79,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- OBSERVABILIDAD -->
+        <!-- OBSERVABILIDAD (HU-6) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -90,7 +90,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- MICROSERVICIOS -->
+        <!-- MICROSERVICIOS (HU-6) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
@@ -155,7 +155,6 @@
 
     <build>
         <plugins>
-            <!-- COMPILADOR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -182,8 +181,6 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-
-            <!-- COBERTURA JACOCO -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -203,8 +200,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <!-- IMPORTANTE: PLUGIN DE SPRING BOOT (Faltaba este) -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

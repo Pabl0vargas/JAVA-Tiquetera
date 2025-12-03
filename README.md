@@ -1,62 +1,64 @@
-# 🎟️ Tiquetera API (Fase 4) - Persistencia Avanzada y Migraciones
+# 🎟️ Tiquetera API (Fase 5) - Seguridad y Robustez
 
 API RESTful con Arquitectura Hexagonal para la gestión de eventos.
 
-Esta versión (**HU-4**) introduce madurez técnica al proyecto mediante el control de versiones de base de datos, transacciones ACID y optimización de alto rendimiento.
+Esta versión (**HU-5**) transforma el sistema en una aplicación **Segura (Stateless)** y **Confiable**, implementando autenticación JWT, control de acceso por roles (RBAC) y un manejo de errores estandarizado bajo normas internacionales.
 
 ---
 
-## 🚀 Novedades de la Versión (HU-4)
+## 🚀 Novedades de la Versión (HU-5)
 
-### 1. 🗄️ Migraciones de Base de Datos (Flyway)
+### 1. 🔐 Seguridad Robusta (Spring Security + JWT)
 
-Ya no dependemos de que Hibernate cree las tablas "mágicamente". Ahora tenemos control total y versionado:
+El sistema ya no es público. Se ha implementado un esquema de seguridad completo:
 
-- **V1**: Estructura inicial (Tablas `events`, `venues`).
-- **V2**: Índices de rendimiento (`idx_events_category`, `idx_venues_city`).
-- **V3**: Ajustes de integridad (`CHECK capacity > 0`) y datos semilla.
+- **Autenticación Stateless**: Uso de JSON Web Tokens (JWT). No se guardan sesiones en el servidor.
+- **Usuarios y Roles**: Nueva tabla `users` con contraseñas encriptadas (BCrypt).
+- **Control de Acceso (RBAC)**:
+  - **Rutas Públicas**: Login, Registro, Swagger.
+  - **Rutas Privadas**: Gestión de Eventos y Venues (requieren rol `ADMIN` para operaciones de escritura).
 
-### 2. ⚡ Optimización de Consultas (Solución N+1)
+### 2. 🚨 Manejo de Errores (RFC 7807)
 
-Se eliminó el problema de múltiples consultas `select` en cascada.
 
-- **Antes**: 1 consulta para listar eventos + N consultas para obtener el recinto de cada uno.
-- **Ahora**: Uso de `@EntityGraph` para traer todo en una sola consulta SQL optimizada con `LEFT JOIN`.
-- **Filtros**: Implementación de **JPA Specifications** para búsquedas dinámicas y eficientes.
 
-### 3. 🛡️ Integridad y Transacciones
+- **Standard Format**: Todas las excepciones responden con el formato `ProblemDetail` (RFC 7807 de la IETF).
+- **Trazabilidad**: Cada error incluye un `traceId` único y un `timestamp` para facilitar la depuración en los logs.
+- **Logging Estructurado**: Registro detallado de eventos (SLF4J) con niveles (`INFO`, `ERROR`) y contexto.
 
-- **ACID**: Uso de `@Transactional` en la capa de aplicación para garantizar atomicidad.
-- **Constraints**: Validaciones duplicadas en BD (Unique Name, Check Capacity) para seguridad robusta.
+### 3. 🏗️ Arquitectura Ajustada
+
+- Se rompieron dependencias circulares moviendo la configuración de Beans (`BeanConfiguration`) fuera de la configuración de seguridad (`SecurityConfig`).
+- Se añadió el dominio de **Usuario** y **Auth** siguiendo los principios hexagonales (Puertos y Adaptadores).
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
 - Java 17 (LTS).
-- Spring Boot 3 (Web, Validation, Data JPA).
-- Flyway (Gestión de Migraciones).
+- Spring Boot 3 (Web, Validation, Data JPA, Security).
+- Spring Security 6 & JJWT (Seguridad).
+- Flyway (V4: Tablas de seguridad).
 - H2 Database (Base de datos en memoria).
-- MapStruct (Mapeo de objetos).
-- Lombok (Boilerplate).
+- MapStruct & Lombok.
 - OpenAPI (Documentación).
 
 ---
 
-## 📂 Estructura del Proyecto (Hexagonal)
+## 📂 Estructura de Seguridad
 
 ```text
 com.tiquetera
-├── domain/                         # 🟢 NÚCLEO (Puro)
-├── application/                    # 🟡 CASOS DE USO (Transaccionales)
-└── infrastructure/                 # 🔴 ADAPTADORES
-    ├── adapters/in/web/            # Controllers
-    ├── adapters/out/persistence/   # Repository + Entity + Flyway
-    │   ├── entity/
-    │   ├── mapper/
-    │   ├── repository/             # @EntityGraph & Specifications
-    │   └── ...
-    └── config/
+├── domain/
+│   ├── model/                      # User, Role
+│   └── ports/in/                   # AuthUseCase
+├── application/                    # AuthUseCaseImpl (Lógica de login/registro)
+└── infrastructure/
+    ├── config/
+    │   ├── security/               # JwtService, Filters, SecurityConfig
+    │   └── BeanConfiguration.java  # Beans de Auth (PasswordEncoder, etc.)
+    ├── adapters/in/web/            # AuthController
+    └── adapters/out/persistence/   # UserEntity, Repository
 ```
 
 ---
@@ -65,7 +67,7 @@ com.tiquetera
 
 ### 1. Compilación
 
-Es necesario compilar para generar los Mappers de MapStruct.
+Es necesario compilar para generar los Mappers y asegurar la integridad de las dependencias de seguridad.
 
 ```bash
 ./mvnw clean install
@@ -77,29 +79,67 @@ Es necesario compilar para generar los Mappers de MapStruct.
 ./mvnw spring-boot:run
 ```
 
-El sistema aplicará automáticamente las migraciones **V1**, **V2** y **V3** al iniciar.
+El puerto configurado es: **8082**.
 
 ### 3. Documentación API
 
-👉 `http://localhost:8082/swagger-ui.html`  
-(Nota: El puerto se configuró en **8082**).
+👉 `http://localhost:8082/swagger-ui.html`
 
 ---
 
-## 🧪 Pruebas de Aceptación Realizadas
+## 🧪 Pruebas de Aceptación (Flujo de Seguridad)
 
-### ✅ Migraciones
+Para interactuar con la API, ahora debes autenticarte.
 
-- El sistema arranca con datos precargados ("Arena Inicial").
-- Las tablas tienen restricciones `CHECK` activas.
+### Paso 1: Intentar acceso no autorizado (Prueba de Fallo)
 
-### ✅ Rendimiento
+Intenta hacer un `POST /venues` sin token.
 
-- El endpoint `GET /events` ejecuta **1 sola consulta SQL** en lugar de N+1.
-- Los filtros por ciudad y fecha se traducen a cláusulas `WHERE` eficientes.
+- **Resultado**: `403 Forbidden` (Acceso denegado).
 
-### ✅ Seguridad de Datos
+### Paso 2: Autenticación (Obtener Token)
 
-- No permite eventos con nombres duplicados (**Error 409**).
-- No permite capacidades negativas (**Error 400/500**).
-- Si una operación falla, se hace **Rollback** automático.
+El sistema inicia con un usuario administrador por defecto (gracias a la migración V4).
+
+- **Endpoint**: `POST /auth/login`  
+- **Credenciales**:
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+- **Resultado**: `200 OK` con un JSON similar a:
+
+```json
+{
+  "token": "eyJhbGciOi..."
+}
+```
+
+> Acción: Copia ese token (sin las comillas).
+
+### Paso 3: Usar el Token
+
+En Swagger:
+
+1. Haz clic en el botón verde **Authorize** (arriba a la derecha).
+2. Escribe: `Bearer TU_TOKEN_AQUI` (ej: `Bearer eyJhb...`).
+3. Haz clic en **Authorize** y luego **Close**.
+
+### Paso 4: Operación Exitosa
+
+Vuelve a intentar:
+
+- `POST /venues`  
+- o `GET /events`
+
+- **Resultado**: `201 Created` o `200 OK`. ¡Ahora tienes permiso!
+
+### Paso 5: Prueba de Errores (RFC 7807)
+
+Intenta registrar un usuario que ya existe (`/auth/register` con `"admin"`).
+
+- **Resultado**: JSON estructurado con `type`, `title`, `status`, `detail` y `traceId`.
